@@ -1,0 +1,35 @@
+name: Build and Push Image to Snowflake
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to Snowflake Image Registry
+        run: |
+          echo "${{ secrets.SNOWFLAKE_PASSWORD }}" | docker login \
+          ${{ secrets.SNOWFLAKE_ACCOUNT }}.registry.snowflakecomputing.com \
+          -u ${{ secrets.SNOWFLAKE_USERNAME }} \
+          --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build -t convert-api:dev src/convert-api
+
+      - name: Tag Docker image
+        run: |
+          docker tag convert-api:dev \
+          ${{ secrets.SNOWFLAKE_ACCOUNT }}.registry.snowflakecomputing.com/CONTAINER_HOL_DB/PUBLIC/IMAGE_REPO/convert-api:dev
+
+      - name: Push Docker image
+        run: |
+          docker push \
+          ${{ secrets.SNOWFLAKE_ACCOUNT }}.registry.snowflakecomputing.com/CONTAINER_HOL_DB/PUBLIC/IMAGE_REPO/convert-api:dev
